@@ -12,47 +12,70 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Salom! Video yuklab beruvchi bot ishga tushdi.")
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+
     text = update.message.text
+
+    # 🚫 Taqiqlangan so'zlarni almashtirish
+    clean_text = text
+    for word in BAD_WORDS:
+        clean_text = re.sub(rf"\b{word}\b", "❌", clean_text, flags=re.IGNORECASE)
+
+    if clean_text != text:
+        await update.message.delete()
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"{update.effective_user.first_name} xabari tozalandi: {clean_text}"
+        )
+        return
 
     # videoni aniqlash
     link_regex = r"(https?://[^\s]+)"
     match = re.search(link_regex, text)
-
     if not match:
         return
 
     url = match.group(0)
 
-    await update.message.reply_text("📥 Video yuklanmoqda...")
+    # Userga javob berish (reply emas, send_message ishlatamiz)
+    processing_msg = await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="📥 Video yuklanmoqda..."
+    )
 
     try:
         # YTDLP opsiya
         ydl_opts = {
             'format': 'best',
             'outtmpl': 'video.mp4',
+            'quiet': True,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        # Telegramga video jo‘natish
-        await update.message.reply_video(
+        # Video yuborish va user nomini caption'da ko‘rsatish
+        user_mention = update.effective_user.mention_html()
+        await context.bot.send_video(
+            chat_id=update.effective_chat.id,
             video=open("video.mp4", "rb"),
-            caption="🎬 Video tayyor!"
+            caption=f"🎬 Video yuklandi!\n👤 {user_mention} tomonidan yuborildi",
+            parse_mode="HTML"
         )
 
         os.remove("video.mp4")
+        await processing_msg.delete()
+        await update.message.delete()  # Endi user xabarini o‘chirish xavfsiz
 
     except Exception as e:
         print("Xato:", e)
-        await update.message.reply_text("❌ Videoni yuklab bo‘lmadi!")
+        await processing_msg.edit_text("❌ Videoni yuklab bo‘lmadi!")
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-
     print("Bot ishga tushdi...")
     app.run_polling()
 
