@@ -8,6 +8,9 @@ BOT_TOKEN = "7992642305:AAFMfdyjqKxO8uEl61_Z-5-CTXsq89DKNlc"
 
 BAD_WORDS = ["ahmoq", "telba", "jinni", "idiot", "stupid"]
 
+# Cookies fayli joylashgan joy
+COOKIES_FILE = "cookies.txt"
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 Salom! Video yuklab beruvchi bot ishga tushdi.")
 
@@ -38,18 +41,22 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     url = match.group(0)
 
-    # Userga javob berish (reply emas, send_message ishlatamiz)
+    # User xabarini o‘chirish
+    await update.message.delete()
+
+    # Userga javob berish
     processing_msg = await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="📥 Video yuklanmoqda..."
     )
 
     try:
-        # YTDLP opsiya
+        # YTDLP opsiyalari
         ydl_opts = {
             'format': 'best',
             'outtmpl': 'video.mp4',
             'quiet': True,
+            'cookies': COOKIES_FILE,  # cookies.txt ishlatamiz
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -66,7 +73,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         os.remove("video.mp4")
         await processing_msg.delete()
-        await update.message.delete()  # Endi user xabarini o‘chirish xavfsiz
 
     except Exception as e:
         print("Xato:", e)
