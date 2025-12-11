@@ -3,7 +3,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import re
 import yt_dlp
 
-BOT_TOKEN = "8390049742:AAERV1JhkDatnw69WrQKaKYrNJHjQFGz_s4"  # 🔹 Bot tokeningizni yozing
+BOT_TOKEN = "7992642305:AAFMfdyjqKxO8uEl61_Z-5-CTXsq89DKNlc"  # 🔹 Bot tokeningizni yozing
 
 # ❌ Taqiqlangan so‘zlar ro‘yxati
 BAD_WORDS = [
